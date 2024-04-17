@@ -66,7 +66,7 @@ unlock:
 	stdio_usb_unlock();
 }
 
-int stdio_usb_in_chars(char *buf, int length)
+static int stdio_usb_in_chars(char *buf, int length)
 {
 	if (!stdio_usb_connected() || !tud_cdc_available())
 		return PICO_ERROR_NO_DATA;
@@ -94,9 +94,25 @@ unlock:
 	return res;
 }
 
+static void stdio_usb_out_flush(void)
+{
+	while (true) {
+		if (!stdio_usb_connected())
+			return;
+
+		int avail = tud_cdc_write_available();
+
+		if (CFG_TUD_CDC_TX_BUFSIZE == avail)
+			break;
+
+		tud_task();
+	}
+}
+
 stdio_driver_t stdio_usb = {
 	.out_chars = stdio_usb_out_chars,
 	.in_chars = stdio_usb_in_chars,
+	.out_flush = stdio_usb_out_flush,
 #if PICO_STDIO_ENABLE_CRLF_SUPPORT
 	.crlf_enabled = PICO_STDIO_DEFAULT_CRLF,
 #endif
