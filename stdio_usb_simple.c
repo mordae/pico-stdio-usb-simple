@@ -44,10 +44,10 @@ static void stdio_usb_out_chars(const char *buf, int length)
 
 		int avail = tud_cdc_write_available();
 
-		if (avail > length)
-			avail = length;
-
 		if (avail) {
+			if (avail > length)
+				avail = length;
+
 			int written = tud_cdc_write(buf + sofar, avail);
 
 			if (written < 0)
@@ -57,6 +57,8 @@ static void stdio_usb_out_chars(const char *buf, int length)
 			length -= written;
 
 			tud_cdc_write_flush();
+		} else {
+			tud_task();
 		}
 	}
 
